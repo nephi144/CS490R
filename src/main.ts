@@ -130,6 +130,31 @@ function loop() {
     userMidi,
     inTune,
   });
+  const toggleBtn = document.getElementById("themeToggle") as HTMLButtonElement;
+
+function setTheme(isDark: boolean) {
+  if (isDark) {
+    document.body.classList.add("dark");
+    toggleBtn.textContent = "☀️ Light Mode";
+    localStorage.setItem("theme", "dark");
+  } else {
+    document.body.classList.remove("dark");
+    toggleBtn.textContent = "🌙 Dark Mode";
+    localStorage.setItem("theme", "light");
+  }
+}
+
+toggleBtn.addEventListener("click", () => {
+  const isDark = document.body.classList.contains("dark");
+  setTheme(!isDark);
+});
+
+// Load saved theme
+const savedTheme = localStorage.getItem("theme");
+if (savedTheme === "dark") {
+  setTheme(true);
+}
+
 
   requestAnimationFrame(loop);
 }
