@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hymn Singing Viz</title>
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 0; background: #f7f7fb; }
+      header { padding: 16px 20px; background: white; border-bottom: 1px solid #e5e5ef; }
+      main { display: grid; grid-template-columns: 280px 1fr 280px; gap: 16px; padding: 16px; }
+      .card { background: white; border: 1px solid #e5e5ef; border-radius: 12px; padding: 12px; box-shadow: 0 4px 16px rgba(0,0,0,.04); }
+      button { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid #ddd; background: #0b5cff; color: white; font-weight: 600; cursor: pointer; }
+      button.secondary { background: white; color: #111; }
+      button:disabled { opacity: .5; cursor: not-allowed; }
+      canvas { width: 100%; height: 360px; border-radius: 12px; border: 1px solid #e5e5ef; background: #fff; }
+      .row { display:flex; gap:10px; }
+      .row > * { flex: 1; }
+      .label { font-size: 12px; color: #555; margin: 8px 0 4px; }
+      .meter { height: 10px; border-radius: 999px; background: #eee; overflow: hidden; }
+      .meter > div { height: 100%; width: 0%; background: #00b35a; }
+      .hint { font-size: 14px; font-weight: 700; margin-top: 10px; }
+      .legend span { display:inline-block; padding:4px 8px; border-radius: 999px; border:1px solid #eee; margin: 4px 4px 0 0; font-size: 12px; }
+      code { background:#f1f1f8; padding:2px 6px; border-radius:6px; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div style="font-weight:800;">Hearing the Data — Guided Singing (MVP)</div>
+      <div style="font-size:13px;color:#666;">Tone.js synth + mic pitch tracking + moving playhead</div>
+    </header>
+
+    <main>
+      <section class="card">
+        <div class="label">Step 1</div>
+        <button id="btnStart">Enable Audio + Mic</button>
+        <div class="label">Step 2</div>
+        <div class="row">
+          <button id="btnPlay" disabled>Play Phrase</button>
+          <button id="btnStop" class="secondary" disabled>Stop</button>
+        </div>
+
+        <div class="label">Mic level (sing louder than the room)</div>
+        <div class="meter"><div id="micFill"></div></div>
+        <div class="hint" id="hint">Click “Enable Audio + Mic” first.</div>
+
+        <div class="label">Tip for noisy rooms</div>
+        <div style="font-size:13px;color:#444;">
+          Use <b>headphones</b> to prevent the speaker audio from leaking into the mic.
+        </div>
+      </section>
+
+      <section class="card">
+        <canvas id="viz" width="1100" height="360"></canvas>
+        <div style="display:flex;justify-content:space-between;margin-top:10px;font-size:13px;color:#555;">
+          <div>Time →</div>
+          <div>Pitch (Do–Ti)</div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="label">Do–Ti mapping</div>
+        <div class="legend">
+          <span>Do=1</span><span>Re=2</span><span>Mi=3</span><span>Fa=4</span><span>So=5</span><span>La=6</span><span>Ti=7</span>
+        </div>
+
+        <div class="label">Current readings</div>
+        <div style="font-size:13px;color:#333;line-height:1.5;">
+          Target MIDI: <code id="targetMidi">—</code><br/>
+          User MIDI: <code id="userMidi">—</code><br/>
+          Error (cents): <code id="cents">—</code><br/>
+          Voiced: <code id="voiced">—</code>
+        </div>
+
+        <div class="label">How this MVP works</div>
+        <div style="font-size:13px;color:#444;line-height:1.45;">
+          - Target phrase is a small JSON array of note events.<br/>
+          - Tone.js plays the notes while the playhead (ball) moves.<br/>
+          - Mic pitch is detected in real time and drawn on the graph.
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
