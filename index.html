@@ -4,24 +4,205 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Hymn Singing Viz</title>
-    <style>
-      body { font-family: system-ui, sans-serif; margin: 0; background: #f7f7fb; }
-      header { padding: 16px 20px; background: white; border-bottom: 1px solid #e5e5ef; }
-      main { display: grid; grid-template-columns: 280px 1fr 280px; gap: 16px; padding: 16px; }
-      .card { background: white; border: 1px solid #e5e5ef; border-radius: 12px; padding: 12px; box-shadow: 0 4px 16px rgba(0,0,0,.04); }
-      button { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid #ddd; background: #0b5cff; color: white; font-weight: 600; cursor: pointer; }
-      button.secondary { background: white; color: #111; }
-      button:disabled { opacity: .5; cursor: not-allowed; }
-      canvas { width: 100%; height: 360px; border-radius: 12px; border: 1px solid #e5e5ef; background: #fff; }
-      .row { display:flex; gap:10px; }
-      .row > * { flex: 1; }
-      .label { font-size: 12px; color: #555; margin: 8px 0 4px; }
-      .meter { height: 10px; border-radius: 999px; background: #eee; overflow: hidden; }
-      .meter > div { height: 100%; width: 0%; background: #00b35a; }
-      .hint { font-size: 14px; font-weight: 700; margin-top: 10px; }
-      .legend span { display:inline-block; padding:4px 8px; border-radius: 999px; border:1px solid #eee; margin: 4px 4px 0 0; font-size: 12px; }
-      code { background:#f1f1f8; padding:2px 6px; border-radius:6px; }
-    </style>
+ <style>
+  :root {
+    --primary: #5b8cff;
+    --primary-dark: #3f6fe0;
+    --accent: #00c896;
+    --bg: #f4f6fb;
+    --card-bg: rgba(255, 255, 255, 0.75);
+    --border: rgba(255, 255, 255, 0.4);
+    --text-dark: #1a1a1a;
+    --text-light: #666;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: "Inter", system-ui, -apple-system, sans-serif;
+    margin: 0;
+    background: linear-gradient(135deg, #e9f0ff, #f7f9ff);
+    color: var(--text-dark);
+  }
+
+  header {
+    padding: 20px 24px;
+    backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.6);
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  }
+
+  header div:first-child {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+  }
+
+  header div:last-child {
+    font-size: 14px;
+    color: var(--text-light);
+    margin-top: 4px;
+  }
+
+  main {
+    display: grid;
+    grid-template-columns: 280px 1fr 280px;
+    gap: 20px;
+    padding: 24px;
+  }
+
+  .card {
+    background: var(--card-bg);
+    backdrop-filter: blur(16px);
+    border-radius: 18px;
+    padding: 18px;
+    border: 1px solid var(--border);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.08);
+  }
+
+  button {
+    width: 100%;
+    padding: 12px;
+    border-radius: 12px;
+    border: none;
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(91, 140, 255, 0.4);
+  }
+
+  button.secondary {
+    background: white;
+    color: var(--text-dark);
+    border: 1px solid #ddd;
+  }
+
+  button.secondary:hover {
+    background: #f3f5ff;
+  }
+
+  button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+canvas {
+  width: 100%;
+  height: 360px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.3);
+  background: radial-gradient(circle at 50% 0%, #ffffff 0%, #eef3ff 40%, #e3e9ff 100%);
+  box-shadow:
+    inset 0 0 40px rgba(91, 140, 255, 0.08),
+    0 20px 50px rgba(91, 140, 255, 0.15);
+  transition: box-shadow 0.3s ease;
+}
+
+.canvas-glow {
+  position: absolute;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(91,140,255,0.3), transparent 70%);
+  filter: blur(80px);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation: floatGlow 6s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes floatGlow {
+  0% { transform: translate(-50%, -48%) scale(1); }
+  100% { transform: translate(-50%, -52%) scale(1.1); }
+}
+
+
+
+  .row {
+    display: flex;
+    gap: 12px;
+  }
+
+  .row > * {
+    flex: 1;
+  }
+
+  .label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    font-weight: 600;
+    color: var(--text-light);
+    margin: 12px 0 6px;
+  }
+
+  .meter {
+    height: 12px;
+    border-radius: 999px;
+    background: #e9ecf8;
+    overflow: hidden;
+  }
+
+  .meter > div {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--accent), #4ef5c1);
+    transition: width 0.1s ease;
+  }
+
+  .hint {
+    font-size: 14px;
+    font-weight: 600;
+    margin-top: 12px;
+    color: var(--primary-dark);
+  }
+
+  .legend span {
+    display: inline-block;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: white;
+    border: 1px solid #e5e9ff;
+    margin: 6px 6px 0 0;
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  code {
+    background: #eef2ff;
+    padding: 4px 8px;
+    border-radius: 8px;
+    font-size: 12px;
+  }
+
+  /* Responsive */
+  @media (max-width: 1100px) {
+    main {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+    <script type="module" src="/src/main.ts"></script>
+
   </head>
   <body>
     <header>
@@ -51,6 +232,7 @@
 
       <section class="card">
         <canvas id="viz" width="1100" height="360"></canvas>
+        <div class="canvas-glow"></div>
         <div style="display:flex;justify-content:space-between;margin-top:10px;font-size:13px;color:#555;">
           <div>Time →</div>
           <div>Pitch (Do–Ti)</div>

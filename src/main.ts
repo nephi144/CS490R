@@ -1,3 +1,9 @@
+import "./style.css";
+
+document.body.style.border = "10px solid lime";
+console.log("MAIN.TS LOADED sfgsdfgsdfgsdfgsdfg");
+
+
 import { PHRASE, PHRASE_LEN } from "./phrase";
 import { TonePlayer } from "./audio";
 import { MicPitch, hzToMidi, centsError } from "./pitch";
