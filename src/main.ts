@@ -1,27 +1,36 @@
-import "./style.css";
-
-document.body.style.border = "10px solid lime";
-console.log("MAIN.TS LOADED sfgsdfgsdfgsdfgsdfg");
-
+import './style.css'
 
 import { PHRASE, PHRASE_LEN } from "./phrase";
 import { TonePlayer } from "./audio";
 import { MicPitch, hzToMidi, centsError } from "./pitch";
 import { CanvasViz } from "./viz";
 
+// ================= DOM =================
+
 const btnStart = document.getElementById("btnStart") as HTMLButtonElement;
 const btnPlay = document.getElementById("btnPlay") as HTMLButtonElement;
 const btnStop = document.getElementById("btnStop") as HTMLButtonElement;
 
 const micFill = document.getElementById("micFill") as HTMLDivElement;
-const hint = document.getElementById("hint") as HTMLDivElement;
-
 const targetMidiEl = document.getElementById("targetMidi") as HTMLElement;
 const userMidiEl = document.getElementById("userMidi") as HTMLElement;
 const centsEl = document.getElementById("cents") as HTMLElement;
 const voicedEl = document.getElementById("voiced") as HTMLElement;
-
 const canvas = document.getElementById("viz") as HTMLCanvasElement;
+
+let hint = document.getElementById("hint") as HTMLDivElement | null;
+
+// If hint doesn't exist, create it safely
+if (!hint) {
+  hint = document.createElement("div");
+  hint.id = "hint";
+  hint.style.marginTop = "10px";
+  hint.style.fontSize = "13px";
+  hint.style.color = "#666";
+  btnStart.parentElement?.appendChild(hint);
+}
+
+// ================= AUDIO / VIZ =================
 
 const player = new TonePlayer();
 const mic = new MicPitch(2048);
@@ -29,22 +38,47 @@ const viz = new CanvasViz(canvas, PHRASE);
 
 let running = false;
 
-// Simple gating thresholds (tune later for your room)
-let noiseFloor = 0.01;        // calibrated at start
-const rmsMargin = 0.01;       // how much louder than noise floor counts as "voiced"
-const minConfidence = 0.45;   // pitch confidence threshold
-const inTuneCents = 50;       // within +/- 50 cents is "good"
+// Mic thresholds
+let noiseFloor = 0.01;
+const rmsMargin = 0.01;
+const minConfidence = 0.45;
+const inTuneCents = 50;
+
+// ================= THEME =================
+
+const toggleBtn = document.getElementById("themeToggle") as HTMLButtonElement;
+
+function setTheme(isDark: boolean) {
+  if (isDark) {
+    document.body.classList.add("dark");
+    toggleBtn.textContent = "☀️ Light Mode";
+    localStorage.setItem("theme", "dark");
+  } else {
+    document.body.classList.remove("dark");
+    toggleBtn.textContent = "🌙 Dark Mode";
+    localStorage.setItem("theme", "light");
+  }
+}
+
+toggleBtn?.addEventListener("click", () => {
+  const isDark = document.body.classList.contains("dark");
+  setTheme(!isDark);
+});
+
+if (localStorage.getItem("theme") === "dark") {
+  setTheme(true);
+}
+
+// ================= HELPERS =================
 
 function getTargetMidiAtTime(t: number): number | null {
   for (const e of PHRASE) {
     if (t >= e.t0 && t < e.t1) return e.midi;
   }
-  // if t beyond end, return last
   return t >= PHRASE_LEN ? PHRASE[PHRASE.length - 1].midi : null;
 }
 
 async function calibrateNoise(): Promise<void> {
-  // sample for ~0.8 sec
   const start = performance.now();
   let sum = 0;
   let n = 0;
@@ -53,14 +87,17 @@ async function calibrateNoise(): Promise<void> {
     const r = mic.read();
     sum += r.rms;
     n += 1;
-    await new Promise((res) => setTimeout(res, 16));
+    await new Promise(res => setTimeout(res, 16));
   }
+
   noiseFloor = sum / Math.max(1, n);
 }
 
+// ================= BUTTON EVENTS =================
+
 btnStart.onclick = async () => {
   btnStart.disabled = true;
-  hint.textContent = "Requesting permissions…";
+  if (hint) hint.textContent = "Requesting permissions…";
 
   await player.init();
   await mic.init();
@@ -70,7 +107,8 @@ btnStart.onclick = async () => {
 
   btnPlay.disabled = false;
   btnStop.disabled = false;
-  hint.textContent = "Ready. Put on headphones, then press Play Phrase.";
+
+  if (hint) hint.textContent = "Ready. Put on headphones, then press Play Phrase.";
 };
 
 btnPlay.onclick = () => {
@@ -85,14 +123,18 @@ btnStop.onclick = () => {
   running = false;
 };
 
+// ================= MAIN LOOP =================
+
 function loop() {
   const t = player.nowSeconds();
   const targetMidi = getTargetMidiAtTime(t);
-
   const reading = mic.read();
 
   // Mic meter
-  const micPct = Math.min(100, Math.max(0, (reading.rms / Math.max(0.02, noiseFloor * 4)) * 100));
+  const micPct = Math.min(
+    100,
+    Math.max(0, (reading.rms / Math.max(0.02, noiseFloor * 4)) * 100)
+  );
   micFill.style.width = `${micPct}%`;
 
   const voiced = reading.rms > (noiseFloor + rmsMargin);
@@ -102,7 +144,6 @@ function loop() {
     userMidi = hzToMidi(reading.hz);
   }
 
-  // Compare
   let err = NaN;
   let inTune = false;
 
@@ -117,44 +158,25 @@ function loop() {
   centsEl.textContent = Number.isFinite(err) ? err.toFixed(0) : "—";
   voicedEl.textContent = voiced ? "yes" : "no";
 
-  if (!btnPlay.disabled) {
-    if (!voiced) hint.textContent = "Sing a little louder than the room…";
-    else if (userMidi === null) hint.textContent = "Pitch not stable yet—try a steady vowel like “ahhh”.";
-    else hint.textContent = inTune ? "✅ On pitch!" : (err > 0 ? "⬇️ Too high — go lower" : "⬆️ Too low — go higher");
+  if (!btnPlay.disabled && hint) {
+    if (!voiced)
+      hint.textContent = "Sing a little louder than the room…";
+    else if (userMidi === null)
+      hint.textContent = "Pitch not stable yet—try a steady vowel like 'ahhh'.";
+    else
+      hint.textContent = inTune
+        ? "✅ On pitch!"
+        : err > 0
+        ? "⬇️ Too high — go lower"
+        : "⬆️ Too low — go higher";
   }
 
-  // Draw
   viz.draw({
     t: running ? t : 0,
     targetMidi,
     userMidi,
     inTune,
   });
-  const toggleBtn = document.getElementById("themeToggle") as HTMLButtonElement;
-
-function setTheme(isDark: boolean) {
-  if (isDark) {
-    document.body.classList.add("dark");
-    toggleBtn.textContent = "☀️ Light Mode";
-    localStorage.setItem("theme", "dark");
-  } else {
-    document.body.classList.remove("dark");
-    toggleBtn.textContent = "🌙 Dark Mode";
-    localStorage.setItem("theme", "light");
-  }
-}
-
-toggleBtn.addEventListener("click", () => {
-  const isDark = document.body.classList.contains("dark");
-  setTheme(!isDark);
-});
-
-// Load saved theme
-const savedTheme = localStorage.getItem("theme");
-if (savedTheme === "dark") {
-  setTheme(true);
-}
-
 
   requestAnimationFrame(loop);
 }

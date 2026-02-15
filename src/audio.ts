@@ -1,5 +1,5 @@
 import * as Tone from "tone";
-import { NoteEvent } from "./phrase";
+import type { NoteEvent } from "./phrase";
 
 export class TonePlayer {
   private synth: Tone.PolySynth;
