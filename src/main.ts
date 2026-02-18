@@ -17,10 +17,10 @@ const userMidiEl = document.getElementById("userMidi") as HTMLElement;
 const centsEl = document.getElementById("cents") as HTMLElement;
 const voicedEl = document.getElementById("voiced") as HTMLElement;
 const canvas = document.getElementById("viz") as HTMLCanvasElement;
+const lyricEl = document.getElementById("lyricDisplay") as HTMLDivElement;
 
 let hint = document.getElementById("hint") as HTMLDivElement | null;
 
-// If hint doesn't exist, create it safely
 if (!hint) {
   hint = document.createElement("div");
   hint.id = "hint";
@@ -130,6 +130,12 @@ function loop() {
   const targetMidi = getTargetMidiAtTime(t);
   const reading = mic.read();
 
+  // 🎵 Lyric Update (correct placement)
+  const currentEvent = PHRASE.find(e => t >= e.t0 && t < e.t1);
+  if (lyricEl) {
+    lyricEl.textContent = currentEvent?.label ?? "";
+  }
+
   // Mic meter
   const micPct = Math.min(
     100,
@@ -152,24 +158,10 @@ function loop() {
     inTune = Math.abs(err) <= inTuneCents;
   }
 
-  // UI text
   targetMidiEl.textContent = targetMidi !== null ? targetMidi.toFixed(0) : "—";
   userMidiEl.textContent = userMidi !== null ? userMidi.toFixed(1) : "—";
   centsEl.textContent = Number.isFinite(err) ? err.toFixed(0) : "—";
   voicedEl.textContent = voiced ? "yes" : "no";
-
-  if (!btnPlay.disabled && hint) {
-    if (!voiced)
-      hint.textContent = "Sing a little louder than the room…";
-    else if (userMidi === null)
-      hint.textContent = "Pitch not stable yet—try a steady vowel like 'ahhh'.";
-    else
-      hint.textContent = inTune
-        ? "✅ On pitch!"
-        : err > 0
-        ? "⬇️ Too high — go lower"
-        : "⬆️ Too low — go higher";
-  }
 
   viz.draw({
     t: running ? t : 0,

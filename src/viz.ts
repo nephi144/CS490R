@@ -1,4 +1,5 @@
-import type { NoteEvent, PHRASE_LEN } from "./phrase";
+import { PHRASE_LEN } from "./phrase";
+import type { NoteEvent } from "./phrase";
 
 type VizState = {
   t: number;
