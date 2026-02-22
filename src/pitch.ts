@@ -35,7 +35,7 @@ export class MicPitch {
   read(): PitchReading {
     if (!this.analyser) return { hz: null, confidence: 0, rms: 0 };
 
-    this.analyser.getFloatTimeDomainData(this.buf);
+    this.analyser.getFloatTimeDomainData(this.buf as Float32Array<ArrayBuffer>);
 
     // RMS for a simple noise gate
     let sumSq = 0;

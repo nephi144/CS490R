@@ -49,11 +49,17 @@
     <canvas id="viz" width="1100" height="360"></canvas>
     <div class="canvas-glow"></div>
 
-    <div style="display:flex;justify-content:space-between;margin-top:10px;font-size:13px;color:#555;">
-      <div>Time →</div>
-      <div>Pitch (Do–Ti)</div>
-    </div>
-  </section>
+  <div id="lyricDisplay" style="text-align:center;font-size:28px;font-weight:700;margin-top:16px;">
+  </div>
+
+  <div style="display:flex;justify-content:space-between;margin-top:10px;font-size:13px;color:#555;">
+    <div>Time →</div>
+    <div>Pitch (Do–Ti)</div>
+  </div>
+  <div class="accuracy-box">
+  Accuracy: <span id="accuracyPct">0%</span>
+</div>
+</section>
 
   <section class="card">
     <div class="label">Do–Ti mapping</div>

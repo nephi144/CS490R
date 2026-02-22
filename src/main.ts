@@ -7,6 +7,7 @@ import { CanvasViz } from "./viz";
 
 // ================= DOM =================
 
+
 const btnStart = document.getElementById("btnStart") as HTMLButtonElement;
 const btnPlay = document.getElementById("btnPlay") as HTMLButtonElement;
 const btnStop = document.getElementById("btnStop") as HTMLButtonElement;
@@ -45,6 +46,11 @@ const minConfidence = 0.45;
 const inTuneCents = 50;
 
 // ================= THEME =================
+const accuracyEl = document.getElementById("accuracyPct") as HTMLElement;
+
+let totalFrames = 0;
+let correctFrames = 0;
+let finalScoreShown = false;
 
 const toggleBtn = document.getElementById("themeToggle") as HTMLButtonElement;
 
@@ -112,6 +118,10 @@ btnStart.onclick = async () => {
 };
 
 btnPlay.onclick = () => {
+    totalFrames = 0;
+correctFrames = 0;
+finalScoreShown = false;
+accuracyEl.textContent = "0%";
   player.stop();
   player.loadPhrase(PHRASE);
   player.play();
@@ -130,11 +140,14 @@ function loop() {
   const targetMidi = getTargetMidiAtTime(t);
   const reading = mic.read();
 
-  // 🎵 Lyric Update (correct placement)
-  const currentEvent = PHRASE.find(e => t >= e.t0 && t < e.t1);
-  if (lyricEl) {
-    lyricEl.textContent = currentEvent?.label ?? "";
-  }
+const currentEvent = PHRASE.find(e => t >= e.t0 && t < e.t1);
+
+if (lyricEl) {
+  lyricEl.innerHTML = PHRASE.map(e => {
+    const active = e === currentEvent;
+    return `<span class="lyric-word ${active ? "active" : ""}">${e.label ?? ""}</span>`;
+  }).join(" ");
+}
 
   // Mic meter
   const micPct = Math.min(
@@ -157,6 +170,33 @@ function loop() {
     err = centsError(userMidi, targetMidi);
     inTune = Math.abs(err) <= inTuneCents;
   }
+  // Show final score when phrase ends
+if (running && t >= PHRASE_LEN && !finalScoreShown) {
+  running = false;
+
+  const finalAccuracy = totalFrames > 0
+    ? (correctFrames / totalFrames) * 100
+    : 0;
+
+  alert(`🎉 Final Accuracy: ${finalAccuracy.toFixed(1)}%`);
+
+  finalScoreShown = true;
+}
+  // ================= ACCURACY TRACKING =================
+
+if (running && targetMidi !== null) {
+  totalFrames++;
+
+  if (inTune) {
+    correctFrames++;
+  }
+
+  const accuracy = totalFrames > 0
+    ? (correctFrames / totalFrames) * 100
+    : 0;
+
+  accuracyEl.textContent = `${accuracy.toFixed(0)}%`;
+}
 
   targetMidiEl.textContent = targetMidi !== null ? targetMidi.toFixed(0) : "—";
   userMidiEl.textContent = userMidi !== null ? userMidi.toFixed(1) : "—";

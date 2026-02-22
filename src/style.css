@@ -126,6 +126,25 @@ main {
   gap: 20px;
   padding: 24px;
 }
+#lyricDisplay {
+  font-size: 28px;
+  font-weight: 700;
+  text-align: center;
+  margin-top: 16px;
+  letter-spacing: 1px;
+  min-height: 40px;
+}
+
+.lyric-word {
+  opacity: 0.4;
+  transition: all 0.2s ease;
+}
+
+.lyric-word.active {
+  opacity: 1;
+  color: var(--primary);
+  transform: scale(1.1);
+}
 
 /* ===============================
    CARD
@@ -154,6 +173,12 @@ body.dark .card {
 /* ===============================
    BUTTONS
 ================================ */
+.accuracy-box {
+  margin: 15px 0;
+  font-size: 22px;
+  font-weight: bold;
+  color: #10b981;
+}
 button {
   width: 100%;
   padding: 12px;
